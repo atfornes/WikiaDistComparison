@@ -1,10 +1,18 @@
 #!/usr/bin/env python
 
+import matplotlib
 import matplotlib.pyplot as plt
 import pickle
 import pandas as pd
 import numpy as np
 import itertools
+
+
+def intOrZero(maybeInt="0"):
+    try:
+        return int(maybeInt)
+    except ValueError:
+        return 0;
 
 
 with open('wikiasDistCompared.pkl', 'rb') as handle:
@@ -38,20 +46,34 @@ for (a, b) in comparisons:
     print '  - %.2f' % (100.0 * (num_wikis - a_wins_b - b_wins_a) / num_wikis) + '% Remaining cases:' + str(remain)
 
 
-f, plots = plt.subplots(len(distributions), 1, figsize=(5, 25), sharex=True, sharey= True)
+params = {
+    'power_law': ['alpha', 'sigma', 'xmin'],
+    'truncated_power_law': ['alpha', 'lambda'],
+    'lognormal': ['mu', 'sigma'],
+    'exponential': ['lambda'],
+    'stretched_exponential': ['lambda', 'beta'],
+}
+
+f, plots = plt.subplots(len(distributions), 3, figsize=(25, 25), sharex=True, sharey= True)
 
 for dist in distributions:
     i = distributions.index(dist)
-    plots[i].set_title(dist);
     passedTests = dist + '_passed_tests';
-    data = df[(df['num_users']>100) & (df[passedTests]>2)]
-    plots[i].scatter(data['total_edits'],
-                     data['num_users'], c=data[passedTests], alpha=0.3);
-    plots[i].set_xscale('log')
-    plots[i].set_yscale('log')
+    data = df[(df['num_users']>100) & (df[passedTests]>3)]
+    if len(data) > 0:
+        for param in params[dist]:
+            j = params[dist].index(param)
+            normFunc = matplotlib.colors.LogNorm();
 
-plt.grid(False)
-plt.ylabel('Total edits')
-plt.xlabel('Users')
+            p = plots[i][j].scatter(data['total_edits'],
+                                    data['num_users'], c=data[dist + '_' + param], cmap="Spectral", norm = normFunc);
+            plots[i][j].set_title(dist + ' ' + param)
+            plots[i][j].set_ylabel('Total edits')
+            plots[i][j].set_xlabel('Users')
+            plots[i][j].set_xscale('log')
+            plots[i][j].set_yscale('log')
+            plt.colorbar(p, ax=plots[i][j])
 
 f.savefig('distributions.png')
+
+norm=,
