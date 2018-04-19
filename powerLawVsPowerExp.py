@@ -8,6 +8,7 @@ from os import listdir
 import pickle
 import multiprocessing
 import itertools
+import sys
 
 def intOrNaN(maybeInt="0"):
     try:
@@ -70,11 +71,20 @@ df = df.reset_index(drop=True)
 
 df['bots_contribs_pct'] = 100 * df['bots'].map(lambda x: intOrNaN(sum(x))) / df['total_edits']
 
+# TODO: double check this
 df['anonymous_contribs_pct'] = 100 - ( 100 * ( df['edits_per_user'].map(lambda x: intOrNaN(sum(x))) + df['bots'].map(lambda x: intOrNaN(sum(x)))) / df['total_edits'])
 
 df['num_users'] = df['edits_per_user'].map(lambda x: len(x))
 
 df['max_contribs'] = df['edits_per_user'].map(lambda x: x[0] if len(x) > 0 else np.nan)
+
+
+botStr = ''
+## if the script receives 'bots' as a param
+## mix bots and users contribution for the comparissons
+if ((len(sys.argv) > 1) & (sys.argv[1] == 'bots')):
+    botStr = 'withBots'
+    df['edits_per_user'] = df['edits_per_user'] + df['bots']
 
 dfCensus = pd.read_csv(wikiaPath + 'curated-Wikia-complete-withBirthDate-v2.csv', quotechar='"', delimiter=',', skipinitialspace = True, converters = {'english': lambda x: x if x else False})
 
@@ -98,7 +108,7 @@ for index, row in df[df['edits_per_user'].map(lambda x: len(x))>100].iterrows():
         df.at[index, a + '_vs_' + b + '_R'] = R
         df.at[index, a + '_vs_' + b + '_p'] = p
 
-df.to_pickle('wikiasDistCompared.pkl');
+df.to_pickle(botStr + 'wikiasDistCompared.pkl');
 
 # to read: with open('wikiasDistCompared.pkl', 'rb') as handle:
 #              df = pickle.load(handle)
